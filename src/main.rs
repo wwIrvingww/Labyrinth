@@ -1,12 +1,16 @@
 mod maze {
     pub mod reader;
+    pub mod generator;
 }
 
 fn main() {
-    let filename = "maze.txt";
-    let maze = maze::reader::load_maze(filename);
+    let width = 16;
+    let height = 8;
 
-    // Imprimir el laberinto cargado
+    // Generar el laberinto
+    let maze = maze::generator::make_maze(width, height);
+
+    // Imprimir el laberinto generado
     for row in maze {
         for cell in row {
             print!("{}", cell);
