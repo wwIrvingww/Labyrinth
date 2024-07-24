@@ -30,16 +30,6 @@ pub fn render(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usi
         }
     }
 
-    // Dibujar el jugador como un punto
-    framebuffer.set_current_color(0xFFFF00); // Color amarillo para el jugador
-    if player.pos.x >= 0.0 && player.pos.y >= 0.0 && player.pos.x < framebuffer.width as f32 && player.pos.y < framebuffer.height as f32 {
-        framebuffer.point(player.pos.x as isize, player.pos.y as isize);
-    }
-
     // Dibujar la línea de visión del jugador
-    cast_ray(framebuffer, maze, player, player.a, block_size);
-
-    println!("Player angle: {}", player.a);
-
     cast_ray(framebuffer, maze, player, player.a, block_size);
 }

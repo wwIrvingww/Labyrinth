@@ -6,16 +6,18 @@ mod maze {
 mod renderer;
 mod player;
 mod vision;
+mod movement;
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
 use renderer::render;
 use player::Player;
+use movement::handle_player_movement;
 
 fn main() {
     let block_size = 40;
-    let (maze, player_pos) = maze::reader::load_maze("./maze.txt");
+    let (maze, player_start) = maze::reader::load_maze("./maze.txt");
 
     let window_width = maze[0].len() * block_size;
     let window_height = maze.len() * block_size;
@@ -30,31 +32,21 @@ fn main() {
         WindowOptions::default(),
     ).unwrap();
 
-    // Crear al jugador en la posición inicial encontrada en el laberinto
-    let player_x = player_pos.1 as f32 * block_size as f32 + block_size as f32 / 2.0;
-    let player_y = player_pos.0 as f32 * block_size as f32 + block_size as f32 / 2.0;
-    let mut player = Player::new(player_x, player_y);
+    // Crear al jugador en la posición inicial y sumarle 20 en x y 20 en y
+    let mut player = Player::new(
+        player_start.0 as f32 * block_size as f32 + 20.0,
+        player_start.1 as f32 * block_size as f32 + 20.0,
+    );
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
         }
 
-        // Movimiento del jugador
-        if window.is_key_down(Key::W) {
-            move_player(&mut player, -1.0, 0.0, &maze, block_size);
-        }
-        if window.is_key_down(Key::S) {
-            move_player(&mut player, 1.0, 0.0, &maze, block_size);
-        }
-        if window.is_key_down(Key::A) {
-            move_player(&mut player, 0.0, -1.0, &maze, block_size);
-        }
-        if window.is_key_down(Key::D) {
-            move_player(&mut player, 0.0, 1.0, &maze, block_size);
-        }
-
         framebuffer.clear();
+
+        // Mover al jugador basado en la entrada del teclado
+        handle_player_movement(&mut player, &window, &maze, block_size);
 
         // Renderizar el laberinto y la línea de visión
         render(&mut framebuffer, &maze, block_size, &player);
@@ -66,18 +58,5 @@ fn main() {
             .unwrap();
 
         std::thread::sleep(frame_delay);
-    }
-}
-
-fn move_player(player: &mut Player, dy: f32, dx: f32, maze: &[Vec<char>], block_size: usize) {
-    let new_x = player.pos.x + dx * block_size as f32;
-    let new_y = player.pos.y + dy * block_size as f32;
-
-    let col = (new_x / block_size as f32) as usize;
-    let row = (new_y / block_size as f32) as usize;
-
-    if maze[row][col] == ' ' || maze[row][col] == 'p' || maze[row][col] == 'g' {
-        player.pos.x = new_x;
-        player.pos.y = new_y;
     }
 }
