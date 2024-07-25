@@ -39,10 +39,10 @@ pub fn render(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usi
     draw_player(framebuffer, player);
 
     // Dibujar la línea de visión del jugador
-    let num_rays = 5; // Número de rayos
+    let num_rays = 100; // Número de rayos
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32; // rayo actual dividido por total de rayos
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
-        cast_ray(framebuffer, &maze.to_vec(), &player, a, block_size, true);
+        cast_ray(framebuffer, maze, player, a, block_size, true); // Aquí pasamos `true` para `draw_line`
     }
 }
