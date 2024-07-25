@@ -3,19 +3,22 @@ mod maze {
     pub mod reader;
     pub mod generator;
 }
-mod renderer;
+mod intersect;
+mod movement;
 mod player;
+mod renderer;
 mod vision;
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
-use renderer::{render2d, render3d};
-use player::{Player, process_events};
+use renderer::render;
+use player::Player;
+use movement::process_events;
 
 fn main() {
     let block_size = 40;
-    let (maze, player_start) = maze::reader::load_maze("./maze.txt");
+    let (maze, start_pos) = maze::reader::load_maze("./maze.txt");
 
     let window_width = maze[0].len() * block_size;
     let window_height = maze.len() * block_size;
@@ -30,29 +33,20 @@ fn main() {
         WindowOptions::default(),
     ).unwrap();
 
-    // Asegurarse de agregar el desplazamiento de 20 en ambos ejes
-    let mut player = Player::new(player_start.0 as f32 * block_size as f32 + 20.0, player_start.1 as f32 * block_size as f32 + 20.0);
-
-    let mut mode = "2D";
+    // Crear al jugador en la posición inicial más 20 en cada eje
+    let mut player = Player::new((start_pos.0 * block_size + 40) as f32, (start_pos.1 * block_size + 40) as f32);
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
         }
 
-        if window.is_key_down(Key::M) {
-            mode = if mode == "2D" { "3D" } else { "2D" };
-        }
-
         process_events(&window, &mut player, &maze, block_size);
 
         framebuffer.clear();
 
-        if mode == "2D" {
-            render2d(&mut framebuffer, &maze, block_size, &player);
-        } else {
-            render3d(&mut framebuffer, &maze, &player, block_size);
-        }
+        // Renderizar el laberinto y la línea de visión
+        render(&mut framebuffer, &maze, block_size, &player);
 
         window
             .update_with_buffer(&framebuffer.buffer.iter().map(|color| {

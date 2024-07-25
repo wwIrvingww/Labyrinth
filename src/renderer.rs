@@ -1,6 +1,6 @@
 use crate::framebuffer::Framebuffer;
 use crate::player::Player;
-use crate::vision::cast_ray;
+use crate::intersect::cast_ray;
 
 fn draw_cell(framebuffer: &mut Framebuffer, x0: usize, y0: usize, block_size: usize, cell: char) {
     let color = match cell {
@@ -20,7 +20,12 @@ fn draw_cell(framebuffer: &mut Framebuffer, x0: usize, y0: usize, block_size: us
     }
 }
 
-pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
+fn draw_player(framebuffer: &mut Framebuffer, player: &Player) {
+    framebuffer.set_current_color(0xFFFF00); // Color amarillo para el jugador
+    framebuffer.point(player.pos.x as isize, player.pos.y as isize);
+}
+
+pub fn render(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
     framebuffer.clear();
 
     // Dibujar el laberinto
@@ -31,25 +36,13 @@ pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     }
 
     // Dibujar el jugador
-    framebuffer.set_current_color(0xFFFF00); // Color amarillo
-    framebuffer.point(player.pos.x as isize, player.pos.y as isize);
+    draw_player(framebuffer, player);
 
     // Dibujar la línea de visión del jugador
-    let num_rays = 100; // Número de rayos a lanzar
+    let num_rays = 5; // Número de rayos
     for i in 0..num_rays {
-        let current_ray = i as f32 / num_rays as f32; // Rayo actual dividido por el total de rayos
+        let current_ray = i as f32 / num_rays as f32; // rayo actual dividido por total de rayos
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
-        cast_ray(framebuffer, maze, player, a, block_size);
-    }
-}
-
-pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], player: &Player, block_size: usize) {
-    framebuffer.clear();
-    
-    let num_rays = 100; // Número de rayos a lanzar
-    for i in 0..num_rays {
-        let current_ray = i as f32 / num_rays as f32; // Rayo actual dividido por el total de rayos
-        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
-        cast_ray(framebuffer, maze, player, a, block_size);
+        cast_ray(framebuffer, &maze.to_vec(), &player, a, block_size, true);
     }
 }
