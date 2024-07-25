@@ -38,6 +38,6 @@ pub fn cast_ray(
             framebuffer.point(x as isize, y as isize);
         }
 
-        d += 0.5; // Disminuir el incremento de d para mayor precisión
+        d += 0.1;
     }
 }

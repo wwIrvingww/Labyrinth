@@ -11,7 +11,7 @@ impl Player {
         Player {
             pos: Vector2::new(x, y),
             a: 0.0, // Inicializamos el ángulo en 0
-            fov: std::f32::consts::PI / 3.0, // Field of view inicial
+            fov: std::f32::consts::PI / 3.0, // Campo de visión más pequeño para un efecto de zoom
         }
     }
 }

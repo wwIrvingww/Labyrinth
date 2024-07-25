@@ -56,8 +56,9 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
         let intersect = cast_ray(framebuffer, &maze.to_vec(), &player, a, block_size, false);
 
-        let distance_to_wall = intersect.distance;
-        let distance_to_projection_plane = 1.0;
+        // let distance_to_wall = intersect.distance;
+        let distance_to_wall = intersect.distance * (a - player.a).cos();
+        let distance_to_projection_plane = 100.0;
         let stake_height = (hh / distance_to_wall) * distance_to_projection_plane;
 
         let stake_top = (hh - (stake_height / 2.0)) as usize;
