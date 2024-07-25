@@ -47,7 +47,7 @@ pub fn cast_ray(
 pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], player: &Player, block_size: usize) {
     framebuffer.clear();
     
-    let num_rays = 100; // Número de rayos a lanzar
+    let num_rays = 2; // Número de rayos a lanzar
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32; // rayo actual dividido por el total de rayos
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);

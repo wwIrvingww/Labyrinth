@@ -12,7 +12,7 @@ mod vision;
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
-use renderer::render;
+use renderer::{render2d, render3d};
 use player::Player;
 use movement::process_events;
 
@@ -33,20 +33,28 @@ fn main() {
         WindowOptions::default(),
     ).unwrap();
 
-    // Crear al jugador en la posición inicial más 20 en cada eje
+    // Acercar la posición inicial del jugador al punto 'p' + 10 en ambos ejes
     let mut player = Player::new((start_pos.0 * block_size + 40) as f32, (start_pos.1 * block_size + 40) as f32);
+    let mut mode = "2D";
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
         }
 
+        if window.is_key_down(Key::M) {
+            mode = if mode == "2D" { "3D" } else { "2D" };
+        }
+
         process_events(&window, &mut player, &maze, block_size);
 
         framebuffer.clear();
 
-        // Renderizar el laberinto y la línea de visión
-        render(&mut framebuffer, &maze, block_size, &player);
+        if mode == "2D" {
+            render2d(&mut framebuffer, &maze, block_size, &player);
+        } else {
+            render3d(&mut framebuffer, &maze, block_size, &player);
+        }
 
         window
             .update_with_buffer(&framebuffer.buffer.iter().map(|color| {
