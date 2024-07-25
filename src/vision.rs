@@ -15,20 +15,31 @@ pub fn cast_ray(
     loop {
         let cos = d * a.cos();
         let sin = d * a.sin();
-        let x = (player.pos.x + cos) as usize;
-        let y = (player.pos.y + sin) as usize;
+        let x = (player.pos.x + cos) as isize;
+        let y = (player.pos.y + sin) as isize;
 
         // Convert our coordinates in pixels to indices in the maze array
-        let i = x / block_size;
-        let j = y / block_size;
+        let i = (x as usize) / block_size;
+        let j = (y as usize) / block_size;
 
         // If the current item is a wall, we break the loop
         if maze[j][i] != ' ' {
             return;
         }
 
-        framebuffer.point(x as isize, y as isize);
+        framebuffer.point(x, y);
 
         d += 1.0;
+    }
+}
+
+pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], player: &Player, block_size: usize) {
+    framebuffer.clear();
+    
+    let num_rays = 100; // Número de rayos a lanzar
+    for i in 0..num_rays {
+        let current_ray = i as f32 / num_rays as f32; // rayo actual dividido por el total de rayos
+        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
+        cast_ray(framebuffer, maze, player, a, block_size);
     }
 }

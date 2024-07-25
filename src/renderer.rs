@@ -20,7 +20,7 @@ fn draw_cell(framebuffer: &mut Framebuffer, x0: usize, y0: usize, block_size: us
     }
 }
 
-pub fn render(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
+pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
     framebuffer.clear();
 
     // Dibujar el laberinto
@@ -30,6 +30,26 @@ pub fn render(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usi
         }
     }
 
+    // Dibujar el jugador
+    framebuffer.set_current_color(0xFFFF00); // Color amarillo
+    framebuffer.point(player.pos.x as isize, player.pos.y as isize);
+
     // Dibujar la línea de visión del jugador
-    cast_ray(framebuffer, maze, player, player.a, block_size);
+    let num_rays = 100; // Número de rayos a lanzar
+    for i in 0..num_rays {
+        let current_ray = i as f32 / num_rays as f32; // Rayo actual dividido por el total de rayos
+        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
+        cast_ray(framebuffer, maze, player, a, block_size);
+    }
+}
+
+pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], player: &Player, block_size: usize) {
+    framebuffer.clear();
+    
+    let num_rays = 100; // Número de rayos a lanzar
+    for i in 0..num_rays {
+        let current_ray = i as f32 / num_rays as f32; // Rayo actual dividido por el total de rayos
+        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
+        cast_ray(framebuffer, maze, player, a, block_size);
+    }
 }
