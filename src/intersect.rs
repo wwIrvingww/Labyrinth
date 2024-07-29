@@ -17,7 +17,7 @@ pub fn cast_ray(
 ) -> Intersect {
     let mut d = 0.0;
 
-    framebuffer.set_current_color(0xFFDDDD);
+    framebuffer.set_current_color(0xFDDDDD);
 
     loop {
         let cos = d * a.cos();
@@ -28,11 +28,12 @@ pub fn cast_ray(
         let i = (x as usize) / block_size;
         let j = (y as usize) / block_size;
 
-        if maze[j][i] != ' ' {
-            let texture_coord = if maze[j][i] == '|' { 
-                (y as isize % block_size as isize) as f32 / block_size as f32 
-            } else { 
-                (x as isize % block_size as isize) as f32 / block_size as f32 
+        // Corregir la comparación de caracteres vacíos
+        if maze[j][i] != ' ' && maze[j][i] != 'p' && maze[j][i] != 'g' {
+            let texture_coord = if maze[j][i] == '|' {
+                (y as f32 % block_size as f32) / block_size as f32
+            } else {
+                (x as f32 % block_size as f32) / block_size as f32
             };
             return Intersect {
                 distance: d,
@@ -45,17 +46,20 @@ pub fn cast_ray(
             framebuffer.point(x, y);
         }
 
-        d += 0.1;
-    }
-}
+        // Corregir la comparación de caracteres vacíos
+        if maze[j][i] != ' ' && maze[j][i] != 'p' && maze[j][i] != 'g' && maze[j][i] != '|' {
+            let texture_coord = if maze[j][i] == '|' {
+                (y as f32 % block_size as f32) / block_size as f32
+            } else {
+                (x as f32 % block_size as f32) / block_size as f32
+            };
+            return Intersect {
+                distance: d,
+                impact: maze[j][i],
+                texture_coord,
+            };
+        }
 
-pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], player: &Player, block_size: usize) {
-    framebuffer.clear();
-    
-    let num_rays = 2; // Número de rayos a lanzar
-    for i in 0..num_rays {
-        let current_ray = i as f32 / num_rays as f32; // rayo actual dividido por el total de rayos
-        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
-        cast_ray(framebuffer, maze, player, a, block_size, true);
+        d += 0.1;
     }
 }

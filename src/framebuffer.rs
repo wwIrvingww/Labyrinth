@@ -42,4 +42,13 @@ impl Framebuffer {
             self.buffer[index] = self.current_color;
         }
     }
+
+    pub fn draw_sky(&mut self, color: Color) {
+        let height = self.height / 2;
+        for y in 0..height {
+            for x in 0..self.width {
+                self.buffer[y * self.width + x] = color;
+            }
+        }
+    }
 }

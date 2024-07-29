@@ -8,7 +8,7 @@ mod movement;
 mod player;
 mod renderer;
 mod vision;
-mod texture; // Asegúrate de añadir esto
+mod texture;
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
@@ -47,7 +47,7 @@ fn main() {
             mode = if mode == "2D" { "3D" } else { "2D" };
         }
 
-        process_events(&window, &mut player, &maze, block_size);
+        process_events(&window, &mut player, &maze, block_size, &mut framebuffer);
 
         framebuffer.clear();
 
