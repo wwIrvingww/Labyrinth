@@ -49,14 +49,31 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     let hw = framebuffer.width as f32 / 2.0;
     let hh = framebuffer.height as f32 / 2.0;
 
-    framebuffer.set_current_color(0xFFFFFF);
+    framebuffer.set_current_color(0x87CEEB); // Color azul para el cielo
+
+    // Dibujar el cielo
+    for y in 0..hh as usize {
+        for x in 0..framebuffer.width {
+            framebuffer.point(x as isize, y as isize);
+        }
+    }
+
+    framebuffer.set_current_color(0x8B4513); // Color marrón para el suelo
+
+    // Dibujar el suelo
+    for y in hh as usize..framebuffer.height {
+        for x in 0..framebuffer.width {
+            framebuffer.point(x as isize, y as isize);
+        }
+    }
+
+    framebuffer.set_current_color(0xFFFFFF); // Color blanco para las paredes
 
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
         let intersect = cast_ray(framebuffer, &maze.to_vec(), &player, a, block_size, false);
 
-        // let distance_to_wall = intersect.distance;
         let distance_to_wall = intersect.distance * (a - player.a).cos();
         let distance_to_projection_plane = 100.0;
         let stake_height = (hh / distance_to_wall) * distance_to_projection_plane;
