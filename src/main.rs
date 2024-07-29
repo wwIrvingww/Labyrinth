@@ -8,6 +8,7 @@ mod movement;
 mod player;
 mod renderer;
 mod vision;
+mod texture; // Asegúrate de añadir esto
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};

@@ -4,6 +4,7 @@ use crate::player::Player;
 pub struct Intersect {
     pub distance: f32,
     pub impact: char,
+    pub texture_coord: f32,
 }
 
 pub fn cast_ray(
@@ -24,15 +25,19 @@ pub fn cast_ray(
         let x = (player.pos.x + cos) as isize;
         let y = (player.pos.y + sin) as isize;
 
-        // Convert our coordinates in pixels to indices in the maze array
         let i = (x as usize) / block_size;
         let j = (y as usize) / block_size;
 
-        // If the current item is a wall, we break the loop
         if maze[j][i] != ' ' {
+            let texture_coord = if maze[j][i] == '|' { 
+                (y as isize % block_size as isize) as f32 / block_size as f32 
+            } else { 
+                (x as isize % block_size as isize) as f32 / block_size as f32 
+            };
             return Intersect {
                 distance: d,
                 impact: maze[j][i],
+                texture_coord,
             };
         }
 
@@ -40,7 +45,7 @@ pub fn cast_ray(
             framebuffer.point(x, y);
         }
 
-        d += 1.0;
+        d += 0.1;
     }
 }
 

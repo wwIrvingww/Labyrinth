@@ -1,6 +1,11 @@
 use crate::framebuffer::Framebuffer;
 use crate::player::Player;
 use crate::intersect::cast_ray;
+use crate::texture::Texture;
+use once_cell::sync::Lazy;
+use std::sync::Arc;
+
+static WALL1: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("wall1.png")));
 
 fn draw_cell(framebuffer: &mut Framebuffer, x0: usize, y0: usize, block_size: usize, cell: char) {
     let color = match cell {
@@ -51,7 +56,6 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
 
     framebuffer.set_current_color(0x87CEEB); // Color azul para el cielo
 
-    // Dibujar el cielo
     for y in 0..hh as usize {
         for x in 0..framebuffer.width {
             framebuffer.point(x as isize, y as isize);
@@ -60,14 +64,11 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
 
     framebuffer.set_current_color(0x8B4513); // Color marrón para el suelo
 
-    // Dibujar el suelo
     for y in hh as usize..framebuffer.height {
         for x in 0..framebuffer.width {
             framebuffer.point(x as isize, y as isize);
         }
     }
-
-    framebuffer.set_current_color(0xFFFFFF); // Color blanco para las paredes
 
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
@@ -81,7 +82,11 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
         let stake_top = (hh - (stake_height / 2.0)) as usize;
         let stake_bottom = (hh + (stake_height / 2.0)) as usize;
 
+        let texture = &*WALL1;
         for y in stake_top..stake_bottom {
+            let tex_y = (y as f32 - stake_top as f32) / (stake_bottom as f32 - stake_top as f32);
+            let (r, g, b) = texture.get_color(intersect.texture_coord, tex_y);
+            framebuffer.set_current_color((r as u32) << 16 | (g as u32) << 8 | b as u32);
             framebuffer.point(i as isize, y as isize);
         }
     }

@@ -1,25 +1,25 @@
-use image::{DynamicImage, GenericImageView};
-use std::path::Path;
+use image::GenericImageView;
+use std::sync::Arc;
+use std::env;
 
 pub struct Texture {
-    pub image: DynamicImage,
-    pub width: u32,
-    pub height: u32,
+    pub data: Arc<image::DynamicImage>,
 }
 
 impl Texture {
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, image::ImageError> {
-        let img = image::open(path)?;
-        let (width, height) = img.dimensions();
-        Ok(Texture {
-            image: img,
-            width,
-            height,
-        })
+    pub fn new(path: &str) -> Self {
+        println!("Directorio de trabajo actual: {:?}", env::current_dir());
+        println!("Cargando textura desde: {}", path);
+        let img = image::open("C:/Users/irvin/UVG/Sexto_Semestre/Graficas/Labyrinth/wall1.png").expect("Failed to load texture");        Texture {
+            data: Arc::new(img),
+        }
     }
 
-    pub fn get_color(&self, x: u32, y: u32) -> u32 {
-        let pixel = self.image.get_pixel(x, y);
-        ((pixel[0] as u32) << 16) | ((pixel[1] as u32) << 8) | (pixel[2] as u32)
+    pub fn get_color(&self, u: f32, v: f32) -> (u8, u8, u8) {
+        let (width, height) = self.data.dimensions();
+        let x = (u * width as f32) as u32;
+        let y = (v * height as f32) as u32;
+        let pixel = self.data.get_pixel(x, y);
+        (pixel[0], pixel[1], pixel[2])
     }
 }
