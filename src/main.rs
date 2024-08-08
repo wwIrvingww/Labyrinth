@@ -9,6 +9,7 @@ mod player;
 mod renderer;
 mod vision;
 mod texture;
+mod camera;
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
@@ -16,6 +17,7 @@ use std::time::Duration;
 use renderer::{render2d, render3d};
 use player::Player;
 use movement::process_events;
+use camera::Camera;
 
 fn main() {
     let block_size = 40;
@@ -34,8 +36,8 @@ fn main() {
         WindowOptions::default(),
     ).unwrap();
 
-    // Acercar la posición inicial del jugador al punto 'p' + 10 en ambos ejes
     let mut player = Player::new((start_pos.0 * block_size + 40) as f32, (start_pos.1 * block_size + 40) as f32);
+    let mut camera = Camera::new((start_pos.0 as f32, start_pos.1 as f32), 0.0, 0.1, 0.005); // Ajuste del rotation_speed
     let mut mode = "2D";
 
     while window.is_open() {
@@ -48,6 +50,9 @@ fn main() {
         }
 
         process_events(&window, &mut player, &maze, block_size, &mut framebuffer);
+
+        camera.update(&window);
+        player.a = camera.angle;  // Sincronizar el ángulo del jugador con el ángulo de la cámara
 
         framebuffer.clear();
 
