@@ -28,7 +28,7 @@ enum ScreenState {
 
 fn main() {
     let block_size = 40;
-    let (maze, start_pos) = maze::reader::load_maze("./maze.txt");
+    let (maze, start_pos) = maze::reader::load_maze("./maze2.txt");
 
     let window_width = maze[0].len() * block_size;
     let window_height = maze.len() * block_size;
@@ -45,7 +45,7 @@ fn main() {
 
     let mut player = Player::new((start_pos.0 * block_size + 40) as f32, (start_pos.1 * block_size + 40) as f32);
     let mut camera = Camera::new((start_pos.0 as f32, start_pos.1 as f32), 0.0, 0.1, 0.005); // Ajuste del rotation_speed
-    let minimap = Minimap::new(5, window_width - 70, 5); // Escala de 5 y offset en la esquina superior derecha
+    let minimap = Minimap::new(5, window_width - 100, 5); // Escala de 5 y offset en la esquina superior derecha
     let mut mode = "2D";
 
     let mut current_screen = ScreenState::Game;
