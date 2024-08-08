@@ -2,7 +2,7 @@ use minifb::Window;
 use crate::player::Player;
 use crate::framebuffer::{Framebuffer, Color};
 
-pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, framebuffer: &mut Framebuffer) {
+pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, framebuffer: &mut Framebuffer) -> bool {
     let mut new_pos = player.pos.clone();
     let speed = 2.0;
 
@@ -30,6 +30,7 @@ pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], 
     } else if maze[j][i] == 'g' {
         println!("Estás en la meta");
         framebuffer.draw_sky(Color { r: 0, g: 255, b: 0 }); // Verde
+        return true; // Indica que se ha llegado a la meta
     } else {
         framebuffer.draw_sky(Color { r: 135, g: 206, b: 235 }); // Color cielo por defecto (Sky Blue)
     }
@@ -38,4 +39,6 @@ pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], 
     if maze[j][i] == ' ' {
         player.pos = new_pos;
     }
+
+    false
 }

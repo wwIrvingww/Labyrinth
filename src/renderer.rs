@@ -1,11 +1,75 @@
-use crate::framebuffer::Framebuffer;
+use crate::framebuffer::{Framebuffer, Color}; // Importa Color aquí
 use crate::player::Player;
 use crate::intersect::cast_ray;
 use crate::texture::Texture;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
 
-static WALL1: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("wall1.png")));
+pub const FONT_WIDTH: usize = 5;
+pub const FONT_HEIGHT: usize = 7;
+
+const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
+    // Representación de 'S'
+    ("S", [
+        0b01110,
+        0b10000,
+        0b10000,
+        0b01110,
+        0b00010,
+        0b00010,
+        0b11100,
+    ]),
+    // Representación de 'U'
+    ("U", [
+        0b10010,
+        0b10010,
+        0b10010,
+        0b10010,
+        0b10010,
+        0b10010,
+        0b01100,
+    ]),
+    // Representación de 'C'
+    ("C", [
+        0b01110,
+        0b10010,
+        0b10000,
+        0b10000,
+        0b10000,
+        0b10010,
+        0b01110,
+    ]),
+    // Representación de 'E'
+    ("E", [
+        0b11110,
+        0b10000,
+        0b10000,
+        0b11100,
+        0b10000,
+        0b10000,
+        0b11110,
+    ]),
+    // Representación de '!'
+    ("!", [
+        0b00100,
+        0b00100,
+        0b00100,
+        0b00100,
+        0b00000,
+        0b00000,
+        0b00100,
+    ]),
+    // Espacio
+    (" ", [
+        0b00000,
+        0b00000,
+        0b00000,
+        0b00000,
+        0b00000,
+        0b00000,
+        0b00000,
+    ]),
+];
 
 fn draw_cell(framebuffer: &mut Framebuffer, x0: usize, y0: usize, block_size: usize, cell: char) {
     let color = match cell {
@@ -30,7 +94,43 @@ fn draw_player(framebuffer: &mut Framebuffer, player: &Player) {
     framebuffer.point(player.pos.x as isize, player.pos.y as isize);
 }
 
-pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
+pub fn draw_text(
+    framebuffer: &mut Framebuffer,
+    text: &str,
+    x: usize,
+    y: usize,
+    scale: usize,
+    color: Color,
+) {
+    let chars: Vec<char> = text.chars().collect();
+    let mut cursor_x = x;
+
+    for ch in chars {
+        if let Some(font_char) = FONT.iter().find(|&&(c, _)| c == ch.to_string()) {
+            for (row, bits) in font_char.1.iter().enumerate() {
+                for col in 0..FONT_WIDTH {
+                    if (bits >> (FONT_WIDTH - 1 - col)) & 1 == 1 {
+                        // Dibujar píxeles según la escala
+                        for sx in 0..scale {
+                            for sy in 0..scale {
+                                let px = (cursor_x + col * scale + sx).try_into().unwrap();
+                                let py = (y + row * scale + sy).try_into().unwrap();
+                                if (px as usize) < framebuffer.width && (py as usize) < framebuffer.height {
+                                    framebuffer.set_pixel(px, py, ((color.r as u32) << 16) | ((color.g as u32) << 8) | (color.b as u32));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            cursor_x += (FONT_WIDTH + 1) * scale; // Espacio entre caracteres
+        }
+    }
+}
+
+static WALL1: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("wall1.png")));
+
+pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player, success: bool) {
     framebuffer.clear();
 
     for row in 0..maze.len() {
@@ -41,6 +141,10 @@ pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
 
     draw_player(framebuffer, player);
 
+    if success {
+        draw_text(framebuffer, "SUCCESS", framebuffer.width / 2 - 50, framebuffer.height / 2 - 10, 2, Color { r: 255, g: 0, b: 255 }); // Rosa para el texto
+    }
+
     let num_rays = 5;
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
@@ -49,9 +153,8 @@ pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     }
 }
 
-pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
+pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player, success: bool) {
     let num_rays = framebuffer.width;
-    let hw = framebuffer.width as f32 / 2.0;
     let hh = framebuffer.height as f32 / 2.0;
 
     framebuffer.set_current_color(0x87CEEB); // Color azul para el cielo
@@ -68,6 +171,10 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
         for x in 0..framebuffer.width {
             framebuffer.point(x as isize, y as isize);
         }
+    }
+
+    if success {
+        draw_text(framebuffer, "SUCCESS", framebuffer.width / 2 - 50, framebuffer.height / 2 - 10, 2, Color { r: 255, g: 0, b: 255 }); // Rosa para el texto
     }
 
     for i in 0..num_rays {
