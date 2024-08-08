@@ -51,4 +51,15 @@ impl Framebuffer {
             }
         }
     }
+
+    pub fn set_pixel(&mut self, x: isize, y: isize, color: u32) {
+        if x >= 0 && y >= 0 && x < self.width as isize && y < self.height as isize {
+            let index = (y as usize) * self.width + (x as usize);
+            self.buffer[index] = Color {
+                r: ((color >> 16) & 0xFF) as u8,
+                g: ((color >> 8) & 0xFF) as u8,
+                b: (color & 0xFF) as u8,
+            };
+        }
+    }
 }

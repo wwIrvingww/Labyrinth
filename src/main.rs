@@ -10,6 +10,7 @@ mod renderer;
 mod vision;
 mod texture;
 mod camera;
+mod minimap;
 
 use framebuffer::Framebuffer;
 use minifb::{Key, Window, WindowOptions};
@@ -18,6 +19,7 @@ use renderer::{render2d, render3d};
 use player::Player;
 use movement::process_events;
 use camera::Camera;
+use minimap::Minimap;
 
 fn main() {
     let block_size = 40;
@@ -38,6 +40,7 @@ fn main() {
 
     let mut player = Player::new((start_pos.0 * block_size + 40) as f32, (start_pos.1 * block_size + 40) as f32);
     let mut camera = Camera::new((start_pos.0 as f32, start_pos.1 as f32), 0.0, 0.1, 0.005); // Ajuste del rotation_speed
+    let minimap = Minimap::new(5, window_width - 70, 5); // Escala de 5 y offset en la esquina superior derecha || 5, window_width - 200, 10
     let mut mode = "2D";
 
     while window.is_open() {
@@ -61,6 +64,9 @@ fn main() {
         } else {
             render3d(&mut framebuffer, &maze, block_size, &player);
         }
+
+        // Dibujar el minimapa
+        minimap.draw(&mut framebuffer, &maze, &player, block_size);
 
         window
             .update_with_buffer(&framebuffer.buffer.iter().map(|color| {
