@@ -8,7 +8,7 @@ use std::sync::Arc;
 pub const FONT_WIDTH: usize = 5;
 pub const FONT_HEIGHT: usize = 7;
 
-const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
+pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
     // Representación de 'S'
     ("S", [
         0b01110,
