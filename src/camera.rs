@@ -45,9 +45,9 @@ impl Camera {
                 if let Some(last_x) = self.last_mouse_x {
                     let mouse_delta = mouse_x - last_x;
                     self.angle += mouse_delta * self.rotation_speed;
-                    println!("Mouse moved: delta_x = {}, new angle = {}", mouse_delta, self.angle);
+                    //println!("Mouse moved: delta_x = {}, new angle = {}", mouse_delta, self.angle);
                 } else {
-                    println!("Initial mouse position: {}", mouse_x);
+                    //println!("Initial mouse position: {}", mouse_x);
                 }
                 self.last_mouse_x = Some(mouse_x);
             } else {

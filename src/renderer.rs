@@ -1,15 +1,15 @@
-use crate::framebuffer::{Framebuffer, Color}; // Importa Color aquí
+use crate::framebuffer::{Framebuffer, Color}; 
 use crate::player::Player;
 use crate::intersect::cast_ray;
 use crate::texture::Texture;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
+use crate::sprites::Sprite;
 
 pub const FONT_WIDTH: usize = 5;
 pub const FONT_HEIGHT: usize = 7;
 
 pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
-    // Representación de 'S'
     ("S", [
         0b01110,
         0b10000,
@@ -19,7 +19,6 @@ pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
         0b00010,
         0b11100,
     ]),
-    // Representación de 'U'
     ("U", [
         0b10010,
         0b10010,
@@ -29,7 +28,6 @@ pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
         0b10010,
         0b01100,
     ]),
-    // Representación de 'C'
     ("C", [
         0b01110,
         0b10010,
@@ -39,7 +37,6 @@ pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
         0b10010,
         0b01110,
     ]),
-    // Representación de 'E'
     ("E", [
         0b11110,
         0b10000,
@@ -49,7 +46,6 @@ pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
         0b10000,
         0b11110,
     ]),
-    // Representación de '!'
     ("!", [
         0b00100,
         0b00100,
@@ -59,7 +55,6 @@ pub const FONT: &[(&str, [u8; FONT_HEIGHT])] = &[
         0b00000,
         0b00100,
     ]),
-    // Espacio
     (" ", [
         0b00000,
         0b00000,
@@ -110,7 +105,6 @@ pub fn draw_text(
             for (row, bits) in font_char.1.iter().enumerate() {
                 for col in 0..FONT_WIDTH {
                     if (bits >> (FONT_WIDTH - 1 - col)) & 1 == 1 {
-                        // Dibujar píxeles según la escala
                         for sx in 0..scale {
                             for sy in 0..scale {
                                 let px = (cursor_x + col * scale + sx).try_into().unwrap();
@@ -123,7 +117,7 @@ pub fn draw_text(
                     }
                 }
             }
-            cursor_x += (FONT_WIDTH + 1) * scale; // Espacio entre caracteres
+            cursor_x += (FONT_WIDTH + 1) * scale;
         }
     }
 }
@@ -142,7 +136,7 @@ pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     draw_player(framebuffer, player);
 
     if success {
-        draw_text(framebuffer, "SUCCESS", framebuffer.width / 2 - 50, framebuffer.height / 2 - 10, 2, Color { r: 255, g: 0, b: 255 }); // Rosa para el texto
+        draw_text(framebuffer, "SUCCESS", framebuffer.width / 2 - 50, framebuffer.height / 2 - 10, 2, Color { r: 255, g: 0, b: 255 });
     }
 
     let num_rays = 5;
@@ -157,7 +151,7 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     let num_rays = framebuffer.width;
     let hh = framebuffer.height as f32 / 2.0;
 
-    framebuffer.set_current_color(0x87CEEB); // Color azul para el cielo
+    framebuffer.set_current_color(0x87CEEB);
 
     for y in 0..hh as usize {
         for x in 0..framebuffer.width {
@@ -165,7 +159,7 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
         }
     }
 
-    framebuffer.set_current_color(0x8B4513); // Color marrón para el suelo
+    framebuffer.set_current_color(0x8B4513);
 
     for y in hh as usize..framebuffer.height {
         for x in 0..framebuffer.width {
@@ -174,7 +168,7 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     }
 
     if success {
-        draw_text(framebuffer, "SUCCESS", framebuffer.width / 2 - 50, framebuffer.height / 2 - 10, 2, Color { r: 255, g: 0, b: 255 }); // Rosa para el texto
+        draw_text(framebuffer, "SUCCESS", framebuffer.width / 2 - 50, framebuffer.height / 2 - 10, 2, Color { r: 255, g: 0, b: 255 });
     }
 
     for i in 0..num_rays {
@@ -198,3 +192,47 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
         }
     }
 }
+
+pub fn render_sprite(
+    framebuffer: &mut Framebuffer,
+    player: &Player,
+    sprite: &Sprite,
+    z_buffer: &mut [f32],
+) {
+    let sprite_a = (sprite.y - player.pos.y).atan2(sprite.x - player.pos.x) - player.a;
+
+    if sprite_a < -player.fov / 2.0 || sprite_a > player.fov / 2.0 {
+        return;
+    }
+
+    let sprite_d = ((player.pos.x - sprite.x).powi(2) + (player.pos.y - sprite.y).powi(2)).sqrt();
+
+    let screen_height = framebuffer.height as f32;
+    let screen_width = framebuffer.width as f32;
+
+    let sprite_size = (screen_height / sprite_d) * 100.0;
+    let start_x = (sprite_a * (screen_height / player.fov) + screen_width / 2.0) - sprite_size / 2.0;
+    let start_y = (screen_height / 2.0) - sprite_size / 2.0;
+
+    let end_x = ((start_x + sprite_size) as usize).min(framebuffer.width);
+    let end_y = ((start_y + sprite_size) as usize).min(framebuffer.height);
+    let start_x = start_x.max(0.0) as usize;
+    let start_y = start_y.max(0.0) as usize;
+
+    if start_x < framebuffer.width && sprite_d < z_buffer[start_x] {
+        for x in start_x..end_x {
+            for y in start_y..end_y {
+                let tx = ((x - start_x) * (sprite.width - 1) / sprite_size as usize) as u32;
+                let ty = ((y - start_y) * (sprite.height - 1) / sprite_size as usize) as u32;
+                let color = sprite.get_color(tx as f32 / sprite.width as f32, ty as f32 / sprite.height as f32);
+
+                if color != (0x98, 0x00, 0x88) { 
+                    framebuffer.set_current_color((color.0 as u32) << 16 | (color.1 as u32) << 8 | color.2 as u32);
+                    framebuffer.point(x as isize, y as isize);
+                }
+                z_buffer[x] = sprite_d;
+            }
+        }
+    }
+}
+
