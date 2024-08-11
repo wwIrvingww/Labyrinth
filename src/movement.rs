@@ -1,25 +1,69 @@
 use minifb::Window;
+use gilrs::{Gilrs, Button, EventType};
 use crate::player::Player;
 use crate::framebuffer::{Framebuffer, Color};
-use crate::gamepad::GamepadInput;
 
-pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, framebuffer: &mut Framebuffer, gamepad_input: Option<GamepadInput>) -> bool {
+pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, framebuffer: &mut Framebuffer, gamepad: &mut Gilrs) -> bool {
     let mut new_pos = player.pos.clone();
     let speed = 2.0;
 
-    // Procesar teclas del teclado
-    if window.is_key_down(minifb::Key::W) || matches!(gamepad_input, Some(GamepadInput::MoveForward)) {
+    // Procesar entradas del gamepad
+    while let Some(gilrs::Event { event, .. }) = gamepad.next_event() {
+        match event {
+            EventType::ButtonPressed(button, _) => match button {
+                Button::DPadUp => {
+                    new_pos.x += player.a.cos() * speed;
+                    new_pos.y += player.a.sin() * speed;
+                }
+                Button::DPadDown => {
+                    new_pos.x -= player.a.cos() * speed;
+                    new_pos.y -= player.a.sin() * speed;
+                }
+                Button::DPadLeft => {
+                    player.a -= 0.1;
+                }
+                Button::DPadRight => {
+                    player.a += 0.1;
+                }
+                Button::South => {
+                    // Aquí podrías manejar alguna acción especial para el botón 'South'
+                }
+                _ => {}
+            },
+            EventType::AxisChanged(axis, value, _) => {
+                if axis == gilrs::Axis::LeftStickY {
+                    if value > 0.1 {
+                        new_pos.x += player.a.cos() * speed;
+                        new_pos.y += player.a.sin() * speed;
+                    } else if value < -0.1 {
+                        new_pos.x -= player.a.cos() * speed;
+                        new_pos.y -= player.a.sin() * speed;
+                    }
+                } else if axis == gilrs::Axis::LeftStickX {
+                    if value > 0.1 {
+                        player.a += 0.1;
+                    } else if value < -0.1 {
+                        player.a -= 0.1;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Procesar teclas del teclado solo si no se procesó ninguna entrada del gamepad
+    if window.is_key_down(minifb::Key::W) {
         new_pos.x += player.a.cos() * speed;
         new_pos.y += player.a.sin() * speed;
     }
-    if window.is_key_down(minifb::Key::S) || matches!(gamepad_input, Some(GamepadInput::MoveBackward)) {
+    if window.is_key_down(minifb::Key::S) {
         new_pos.x -= player.a.cos() * speed;
         new_pos.y -= player.a.sin() * speed;
     }
-    if window.is_key_down(minifb::Key::A) || matches!(gamepad_input, Some(GamepadInput::MoveLeft)) {
+    if window.is_key_down(minifb::Key::A) {
         player.a -= 0.1;
     }
-    if window.is_key_down(minifb::Key::D) || matches!(gamepad_input, Some(GamepadInput::MoveRight)) {
+    if window.is_key_down(minifb::Key::D) {
         player.a += 0.1;
     }
 

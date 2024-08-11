@@ -1,4 +1,7 @@
 use minifb::{Key, Window};
+use gilrs::{Gilrs, Button, EventType, Event};
+
+const GAMEPAD_SENSITIVITY: f32 = 5.0; // ajusta este valor según tus necesidades
 
 pub struct Camera {
     pub position: (f32, f32),
@@ -6,7 +9,10 @@ pub struct Camera {
     pub speed: f32,
     pub rotation_speed: f32,
     pub last_mouse_x: Option<f32>,
-    pub use_keyboard_rotation: bool,
+    pub moving_forward: bool,
+    pub moving_backward: bool,
+    pub rotating_left: bool,
+    pub rotating_right: bool,
 }
 
 impl Camera {
@@ -17,42 +23,79 @@ impl Camera {
             speed,
             rotation_speed,
             last_mouse_x: None,
-            use_keyboard_rotation: false,
+            moving_forward: false,
+            moving_backward: false,
+            rotating_left: false,
+            rotating_right: false,
         }
     }
 
-    pub fn update(&mut self, window: &Window) {
-        self.use_keyboard_rotation = false;
-
+    pub fn update(&mut self, window: &Window, gamepad: &mut Gilrs) {
+        // Procesar entrada del teclado
         if window.is_key_down(Key::W) {
-            self.move_forward();
+            self.moving_forward = true;
+        } else {
+            self.moving_forward = false;
         }
         if window.is_key_down(Key::S) {
-            self.move_backward();
+            self.moving_backward = true;
+        } else {
+            self.moving_backward = false;
         }
         if window.is_key_down(Key::A) {
-            self.rotate_left();
-            self.use_keyboard_rotation = true;
+            self.rotating_left = true;
+        } else {
+            self.rotating_left = false;
         }
         if window.is_key_down(Key::D) {
-            self.rotate_right();
-            self.use_keyboard_rotation = true;
+            self.rotating_right = true;
+        } else {
+            self.rotating_right = false;
         }
 
-        // Mouse movement logic
-        if !self.use_keyboard_rotation {
-            if let Some((mouse_x, _)) = window.get_mouse_pos(minifb::MouseMode::Pass) {
-                if let Some(last_x) = self.last_mouse_x {
-                    let mouse_delta = mouse_x - last_x;
-                    self.angle += mouse_delta * self.rotation_speed;
-                    //println!("Mouse moved: delta_x = {}, new angle = {}", mouse_delta, self.angle);
-                } else {
-                    //println!("Initial mouse position: {}", mouse_x);
+        // Procesar entrada del gamepad
+        while let Some(Event { event, .. }) = gamepad.next_event() {
+            match event {
+                EventType::ButtonPressed(Button::DPadUp, _) => {
+                    self.moving_forward = true;
                 }
-                self.last_mouse_x = Some(mouse_x);
-            } else {
-                self.last_mouse_x = None;
+                EventType::ButtonReleased(Button::DPadUp, _) => {
+                    self.moving_forward = false;
+                }
+                EventType::ButtonPressed(Button::DPadDown, _) => {
+                    self.moving_backward = true;
+                }
+                EventType::ButtonReleased(Button::DPadDown, _) => {
+                    self.moving_backward = false;
+                }
+                EventType::ButtonPressed(Button::DPadLeft, _) => {
+                    self.rotating_left = true;
+                }
+                EventType::ButtonReleased(Button::DPadLeft, _) => {
+                    self.rotating_left = false;
+                }
+                EventType::ButtonPressed(Button::DPadRight, _) => {
+                    self.rotating_right = true;
+                }
+                EventType::ButtonReleased(Button::DPadRight, _) => {
+                    self.rotating_right = false;
+                }
+                _ => {}
             }
+        }
+
+        // Actualizar posición y ángulo
+        if self.moving_forward {
+            self.move_forward();
+        }
+        if self.moving_backward {
+            self.move_backward();
+        }
+        if self.rotating_left {
+            self.rotate_left_gamepad();
+        }
+        if self.rotating_right {
+            self.rotate_right_gamepad();
         }
     }
 
@@ -72,5 +115,13 @@ impl Camera {
 
     fn rotate_right(&mut self) {
         self.angle += self.rotation_speed;
+    }
+
+    fn rotate_left_gamepad(&mut self) {
+        self.angle -= self.rotation_speed * GAMEPAD_SENSITIVITY;
+    }
+
+    fn rotate_right_gamepad(&mut self) {
+        self.angle += self.rotation_speed * GAMEPAD_SENSITIVITY;
     }
 }

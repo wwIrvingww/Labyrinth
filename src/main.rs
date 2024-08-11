@@ -26,7 +26,7 @@ use minimap::Minimap;
 use renderer::{render2d, render3d, render_sprite};
 use menu::Menu;
 use sprites::Sprite;
-use gamepad::{Gamepad, GamepadInput};
+use gamepad::{Gamepad};
 use crate::movement::process_events;
 
 enum ScreenState {
@@ -70,28 +70,6 @@ fn run_game() {
     let mut mode = "2D";  // Inicializar la variable `mode`
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        // Actualizar y capturar la entrada del Gamepad
-        let gamepad_input = gamepad.update();
-
-        if let Some(input) = &gamepad_input {
-            match input {
-                GamepadInput::Enter => {
-                    if let ScreenState::Menu = current_screen {
-                        if let Some(selected_level) = menu.update(&window, &mut gamepad.gilrs) {
-                            current_screen = ScreenState::Game(selected_level);
-                            continue;
-                        }
-                    }
-                }
-                GamepadInput::ToggleMode => {
-                    if let ScreenState::Game(_) = current_screen {
-                        mode = if mode == "2D" { "3D" } else { "2D" };
-                    }
-                }
-                _ => {}
-            }
-        }
-
         match &mut current_screen {
             ScreenState::Menu => {
                 framebuffer.clear(); 
@@ -123,30 +101,24 @@ fn run_game() {
                 let mut success = false;
 
                 while window.is_open() && !window.is_key_down(Key::Escape) {
-                    // Aquí se procesa el input del Gamepad y del teclado
-                    let moved = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, gamepad_input.clone());
+                    let moved = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, &mut gamepad.gilrs);
 
                     let elapsed_time = sprite_timer.elapsed().as_secs();
 
-                    if elapsed_time >= trigger_time {
+                    // Solo disparar sprites si está en modo 3D
+                    if mode == "3D" && elapsed_time >= trigger_time {
                         let ghost_x = player.pos.x + player.a.cos() * block_size as f32;
                         let ghost_y = player.pos.y + player.a.sin() * block_size as f32;
 
-                        // Limitar el número de fantasmas a 3
                         if sprites.len() >= 3 {
-                            sprites.remove(0);  // Elimina el primer fantasma añadido
+                            sprites.remove(0);
                         }
 
                         let sprite = Sprite::new(ghost_x, ghost_y, 0.0, sprite_texture_path, 16, 16);
-                        sprites.push(sprite);  // Añade el nuevo fantasma
-
-                        // println!("Ghost appeared at ({}, {})!", ghost_x, ghost_y);
+                        sprites.push(sprite);
 
                         sprite_timer = Instant::now();
                         trigger_time = rng.gen_range(0..15);
-                        // println!("Next ghost will appear in {} seconds.", trigger_time);
-                    } else {
-                        // println!("{} seconds left until next ghost.", trigger_time - elapsed_time);
                     }
 
                     if success {
@@ -154,7 +126,7 @@ fn run_game() {
                         break;
                     }
 
-                    camera.update(&window);
+                    camera.update(&window, &mut gamepad.gilrs);
                     player.a = camera.angle;
 
                     framebuffer.clear();
@@ -230,4 +202,3 @@ fn run_game() {
         std::thread::sleep(frame_delay);
     }
 }
-

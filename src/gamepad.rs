@@ -25,52 +25,56 @@ impl Gamepad {
     }
 
     pub fn update(&mut self) -> Option<GamepadInput> {
-        while let Some(Event { id: _, event, time: _ }) = self.gilrs.next_event() {
+        while let Some(Event { event, .. }) = self.gilrs.next_event() {
             match event {
                 EventType::ButtonPressed(button, _) => match button {
                     Button::South => {
-                        println!("Button 1 pressed (Enter)");
+                        println!("Button South pressed (Enter)");
                         return Some(GamepadInput::Enter);
                     }
                     Button::East => {
-                        println!("Button 2 pressed (Enter)");
+                        println!("Button East pressed (Enter)");
                         return Some(GamepadInput::Enter);
                     }
                     Button::West => {
-                        println!("Button 4 pressed (M)");
+                        println!("Button West pressed (ToggleMode)");
                         return Some(GamepadInput::ToggleMode);
                     }
                     Button::C => {
-                        println!("Button 5 pressed (M)");
+                        println!("Button C pressed (ToggleMode)");
                         return Some(GamepadInput::ToggleMode);
                     }
                     Button::LeftTrigger => {
-                        println!("Button 7 pressed (A)");
+                        println!("Left Trigger pressed (MoveLeft)");
                         return Some(GamepadInput::MoveLeft);
                     }
                     Button::RightTrigger => {
-                        println!("Button 8 pressed (D)");
+                        println!("Right Trigger pressed (MoveRight)");
                         return Some(GamepadInput::MoveRight);
                     }
-                    _ => {}
+                    _ => {
+                        println!("Unhandled button pressed: {:?}", button);
+                    }
                 },
                 EventType::AxisChanged(axis, value, _) => {
                     if axis == Axis::LeftStickY {
                         if value > 0.1 {
-                            println!("D-pad moved down (S)");
+                            println!("Left Stick moved down (MoveBackward)");
                             return Some(GamepadInput::MoveBackward);
                         } else if value < -0.1 {
-                            println!("D-pad moved up (W)");
+                            println!("Left Stick moved up (MoveForward)");
                             return Some(GamepadInput::MoveForward);
                         }
                     } else if axis == Axis::LeftStickX {
                         if value > 0.1 {
-                            println!("D-pad moved right (D)");
+                            println!("Left Stick moved right (MoveRight)");
                             return Some(GamepadInput::MoveRight);
                         } else if value < -0.1 {
-                            println!("D-pad moved left (A)");
+                            println!("Left Stick moved left (MoveLeft)");
                             return Some(GamepadInput::MoveLeft);
                         }
+                    } else {
+                        println!("Unhandled axis movement: {:?} with value {}", axis, value);
                     }
                 }
                 _ => (),
