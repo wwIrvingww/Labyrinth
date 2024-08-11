@@ -17,6 +17,7 @@ mod camera;
 mod minimap;
 mod menu;
 mod sprites;
+mod gamepad;
 
 use framebuffer::Framebuffer;
 use player::Player;
@@ -25,6 +26,7 @@ use minimap::Minimap;
 use renderer::{render2d, render3d, render_sprite};
 use menu::Menu;
 use sprites::Sprite;
+use gamepad::{Gamepad, GamepadInput};
 use crate::movement::process_events;
 
 enum ScreenState {
@@ -43,7 +45,7 @@ fn run_game() {
     let block_size = 40;
     let mut rng = rand::thread_rng();
     let mut sprite_timer = Instant::now();
-    let mut trigger_time = rng.gen_range(40..150);
+    let mut trigger_time = rng.gen_range(0..15);
 
     let window_width = 640;
     let window_height = 480;
@@ -64,13 +66,37 @@ fn run_game() {
     let sprite_texture_path = "C:/Users/irvin/UVG/Sexto_Semestre/Graficas/Labyrinth/ghost.png";
 
     let mut sprites = vec![]; // Lista de fantasmas
+    let mut gamepad = Gamepad::new(); // Inicializar el GamePad
+    let mut mode = "2D";  // Inicializar la variable `mode`
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        // Actualizar y capturar la entrada del Gamepad
+        let gamepad_input = gamepad.update();
+
+        if let Some(input) = &gamepad_input {
+            match input {
+                GamepadInput::Enter => {
+                    if let ScreenState::Menu = current_screen {
+                        if let Some(selected_level) = menu.update(&window, &mut gamepad.gilrs) {
+                            current_screen = ScreenState::Game(selected_level);
+                            continue;
+                        }
+                    }
+                }
+                GamepadInput::ToggleMode => {
+                    if let ScreenState::Game(_) = current_screen {
+                        mode = if mode == "2D" { "3D" } else { "2D" };
+                    }
+                }
+                _ => {}
+            }
+        }
+
         match &mut current_screen {
             ScreenState::Menu => {
                 framebuffer.clear(); 
 
-                if let Some(selected_level) = menu.update(&window) {
+                if let Some(selected_level) = menu.update(&window, &mut gamepad.gilrs) {
                     current_screen = ScreenState::Game(selected_level);
                     continue;
                 }
@@ -94,66 +120,57 @@ fn run_game() {
                 let mut player = Player::new((start_pos.0 * block_size + 40) as f32, (start_pos.1 * block_size + 40) as f32);
                 let mut camera = Camera::new((start_pos.0 as f32, start_pos.1 as f32), 0.0, 0.1, 0.005);
                 let minimap = Minimap::new(5, maze_width - 110, 5);
-                let mut mode = "2D";
                 let mut success = false;
 
                 while window.is_open() && !window.is_key_down(Key::Escape) {
-                    match current_screen {
-                        ScreenState::Game(_) => {
-                            if window.is_key_pressed(Key::M, minifb::KeyRepeat::No) {
-                                mode = if mode == "2D" { "3D" } else { "2D" };
-                            }
+                    // Aquí se procesa el input del Gamepad y del teclado
+                    let moved = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, gamepad_input.clone());
 
-                            let moved = process_events(&window, &mut player, &maze, block_size, &mut framebuffer);
+                    let elapsed_time = sprite_timer.elapsed().as_secs();
 
-                            let elapsed_time = sprite_timer.elapsed().as_secs();
+                    if elapsed_time >= trigger_time {
+                        let ghost_x = player.pos.x + player.a.cos() * block_size as f32;
+                        let ghost_y = player.pos.y + player.a.sin() * block_size as f32;
 
-                            if elapsed_time >= trigger_time {
-                                let ghost_x = player.pos.x + player.a.cos() * block_size as f32;
-                                let ghost_y = player.pos.y + player.a.sin() * block_size as f32;
-
-                                // Limitar el número de fantasmas a 3
-                                if sprites.len() >= 3 {
-                                    sprites.remove(0);  // Elimina el primer fantasma añadido
-                                }
-
-                                let sprite = Sprite::new(ghost_x, ghost_y, 0.0, sprite_texture_path, 16, 16);
-                                sprites.push(sprite);  // Añade el nuevo fantasma
-
-                                println!("Ghost appeared at ({}, {})!", ghost_x, ghost_y);
-
-                                sprite_timer = Instant::now();
-                                trigger_time = rng.gen_range(0..15);
-                                println!("Next ghost will appear in {} seconds.", trigger_time);
-                            } else {
-                                println!("{} seconds left until next ghost.", trigger_time - elapsed_time);
-                            }
-
-                            if success {
-                                current_screen = ScreenState::Success;
-                                break;
-                            }
-
-                            camera.update(&window);
-                            player.a = camera.angle;
-
-                            framebuffer.clear();
-
-                            let mut z_buffer = vec![f32::MAX; framebuffer.width];
-
-                            if mode == "2D" {
-                                render2d(&mut framebuffer, &maze, block_size, &player, success);
-                            } else {
-                                render3d(&mut framebuffer, &maze, block_size, &player, success);
-                            }
-
-                            minimap.draw(&mut framebuffer, &maze, &player, &sprites, block_size);
-
-                            for sprite in &sprites {
-                                render_sprite(&mut framebuffer, &player, sprite, &mut z_buffer);
-                            }
+                        // Limitar el número de fantasmas a 3
+                        if sprites.len() >= 3 {
+                            sprites.remove(0);  // Elimina el primer fantasma añadido
                         }
-                        _ => {}
+
+                        let sprite = Sprite::new(ghost_x, ghost_y, 0.0, sprite_texture_path, 16, 16);
+                        sprites.push(sprite);  // Añade el nuevo fantasma
+
+                        // println!("Ghost appeared at ({}, {})!", ghost_x, ghost_y);
+
+                        sprite_timer = Instant::now();
+                        trigger_time = rng.gen_range(0..15);
+                        // println!("Next ghost will appear in {} seconds.", trigger_time);
+                    } else {
+                        // println!("{} seconds left until next ghost.", trigger_time - elapsed_time);
+                    }
+
+                    if success {
+                        current_screen = ScreenState::Success;
+                        break;
+                    }
+
+                    camera.update(&window);
+                    player.a = camera.angle;
+
+                    framebuffer.clear();
+
+                    let mut z_buffer = vec![f32::MAX; framebuffer.width];
+
+                    if mode == "2D" {
+                        render2d(&mut framebuffer, &maze, block_size, &player, success);
+                    } else {
+                        render3d(&mut framebuffer, &maze, block_size, &player, success);
+                    }
+
+                    minimap.draw(&mut framebuffer, &maze, &player, &sprites, block_size);
+
+                    for sprite in &sprites {
+                        render_sprite(&mut framebuffer, &player, sprite, &mut z_buffer);
                     }
 
                     window
@@ -213,3 +230,4 @@ fn run_game() {
         std::thread::sleep(frame_delay);
     }
 }
+

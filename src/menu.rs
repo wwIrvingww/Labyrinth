@@ -1,4 +1,6 @@
 use minifb::{Key, Window};
+use gilrs::{Button, Gilrs};
+
 use crate::framebuffer::{Framebuffer, Color}; // Importa el framebuffer y Color
 
 pub struct Menu {
@@ -12,7 +14,28 @@ impl Menu {
         }
     }
 
-    pub fn update(&mut self, window: &Window) -> Option<String> {
+    pub fn update(&mut self, window: &Window, gamepad: &mut Gilrs) -> Option<String> {
+        // Procesar entradas del gamepad
+        while let Some(gilrs::Event { event, .. }) = gamepad.next_event() {
+            match event {
+                gilrs::EventType::ButtonPressed(Button::DPadRight, ..) => {
+                    self.selected = (self.selected + 1) % 3; // Avanza al siguiente cuadro
+                }
+                gilrs::EventType::ButtonPressed(Button::DPadLeft, ..) => {
+                    if self.selected == 0 {
+                        self.selected = 2; // Mueve la selección al último cuadro
+                    } else {
+                        self.selected -= 1; // Retrocede al cuadro anterior
+                    }
+                }
+                gilrs::EventType::ButtonPressed(Button::South, ..) => {
+                    return Some(format!("maze{}.txt", self.selected + 1)); // Selecciona el nivel basado en el cuadro
+                }
+                _ => {}
+            }
+        }
+
+        // Procesar entradas del teclado
         if window.is_key_pressed(Key::D, minifb::KeyRepeat::No) {
             self.selected = (self.selected + 1) % 3; // Avanza al siguiente cuadro
         }
@@ -23,7 +46,6 @@ impl Menu {
                 self.selected -= 1; // Retrocede al cuadro anterior
             }
         }
-
         if window.is_key_pressed(Key::Enter, minifb::KeyRepeat::No) {
             return Some(format!("maze{}.txt", self.selected + 1)); // Selecciona el nivel basado en el cuadro
         }

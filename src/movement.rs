@@ -1,23 +1,25 @@
 use minifb::Window;
 use crate::player::Player;
 use crate::framebuffer::{Framebuffer, Color};
+use crate::gamepad::GamepadInput;
 
-pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, framebuffer: &mut Framebuffer) -> bool {
+pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, framebuffer: &mut Framebuffer, gamepad_input: Option<GamepadInput>) -> bool {
     let mut new_pos = player.pos.clone();
     let speed = 2.0;
 
-    if window.is_key_down(minifb::Key::W) {
+    // Procesar teclas del teclado
+    if window.is_key_down(minifb::Key::W) || matches!(gamepad_input, Some(GamepadInput::MoveForward)) {
         new_pos.x += player.a.cos() * speed;
         new_pos.y += player.a.sin() * speed;
     }
-    if window.is_key_down(minifb::Key::S) {
+    if window.is_key_down(minifb::Key::S) || matches!(gamepad_input, Some(GamepadInput::MoveBackward)) {
         new_pos.x -= player.a.cos() * speed;
         new_pos.y -= player.a.sin() * speed;
     }
-    if window.is_key_down(minifb::Key::A) {
+    if window.is_key_down(minifb::Key::A) || matches!(gamepad_input, Some(GamepadInput::MoveLeft)) {
         player.a -= 0.1;
     }
-    if window.is_key_down(minifb::Key::D) {
+    if window.is_key_down(minifb::Key::D) || matches!(gamepad_input, Some(GamepadInput::MoveRight)) {
         player.a += 0.1;
     }
 

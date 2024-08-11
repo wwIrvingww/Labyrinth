@@ -7,6 +7,7 @@ name = "Labyrinth"
 version = "0.1.0"
 dependencies = [
  "ggez",
+ "gilrs",
  "image 0.23.14",
  "minifb",
  "nalgebra",
