@@ -68,7 +68,7 @@ fn run_game() {
 
     let mut sprites = vec![]; // Lista de fantasmas
     let mut gamepad = Gamepad::new(); // Inicializar el GamePad
-    let mode = "2D";  // Inicializar la variable `mode`
+    let mut mode = "2D";  // Inicializar la variable `mode`
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         match &mut current_screen {
@@ -108,6 +108,11 @@ fn run_game() {
                 let mut success = false;
 
                 while window.is_open() && !window.is_key_down(Key::Escape) {
+                    // Lógica para cambiar entre modo 2D y 3D con la tecla 'm'
+                    if window.is_key_pressed(Key::M, minifb::KeyRepeat::No) {
+                        mode = if mode == "2D" { "3D" } else { "2D" };
+                    }
+
                     let reached_goal = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, &mut gamepad.gilrs);
 
                     if reached_goal {
@@ -222,4 +227,3 @@ fn run_game() {
         std::thread::sleep(frame_delay);
     }
 }
-
