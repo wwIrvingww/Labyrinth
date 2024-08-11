@@ -2,6 +2,9 @@ use minifb::{Key, Window};
 use gilrs::{Gilrs, Button, EventType, Event};
 
 const GAMEPAD_SENSITIVITY: f32 = 5.0; // ajusta este valor según tus necesidades
+const MOUSE_SENSITIVITY: f32 = 0.02; // sensibilidad para la rotación con el mouse 0.02
+const KEY_SENSITIVITY: f32 = 4.0; // sensibilidad para la rotación con el mouse 0.02
+
 
 pub struct Camera {
     pub position: (f32, f32),
@@ -84,6 +87,15 @@ impl Camera {
             }
         }
 
+        // Procesar entrada del mouse para la rotación
+        if let Some(mouse_pos) = window.get_mouse_pos(minifb::MouseMode::Discard) {
+            if let Some(last_x) = self.last_mouse_x {
+                let delta_x = mouse_pos.0 - last_x;
+                self.angle += delta_x * MOUSE_SENSITIVITY;
+            }
+            self.last_mouse_x = Some(mouse_pos.0);
+        }
+
         // Actualizar posición y ángulo
         if self.moving_forward {
             self.move_forward();
@@ -92,10 +104,10 @@ impl Camera {
             self.move_backward();
         }
         if self.rotating_left {
-            self.rotate_left_gamepad();
+            self.rotate_left();
         }
         if self.rotating_right {
-            self.rotate_right_gamepad();
+            self.rotate_right();
         }
     }
 
@@ -110,11 +122,11 @@ impl Camera {
     }
 
     fn rotate_left(&mut self) {
-        self.angle -= self.rotation_speed;
+        self.angle -= self.rotation_speed * KEY_SENSITIVITY;
     }
 
     fn rotate_right(&mut self) {
-        self.angle += self.rotation_speed;
+        self.angle += self.rotation_speed * KEY_SENSITIVITY;
     }
 
     fn rotate_left_gamepad(&mut self) {
@@ -125,3 +137,5 @@ impl Camera {
         self.angle += self.rotation_speed * GAMEPAD_SENSITIVITY;
     }
 }
+
+

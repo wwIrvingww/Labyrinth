@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 use minifb::{Key, Window, WindowOptions};
-use rand::Rng;
+use image::{GenericImageView, imageops::FilterType}; // Importa el tipo de filtro para el escalado
+use rand::Rng; // Importa el rasgo Rng para usar gen_range
 
 mod framebuffer;
 mod maze {
@@ -26,7 +27,7 @@ use minimap::Minimap;
 use renderer::{render2d, render3d, render_sprite};
 use menu::Menu;
 use sprites::Sprite;
-use gamepad::{Gamepad};
+use gamepad::Gamepad;
 use crate::movement::process_events;
 
 enum ScreenState {
@@ -67,12 +68,12 @@ fn run_game() {
 
     let mut sprites = vec![]; // Lista de fantasmas
     let mut gamepad = Gamepad::new(); // Inicializar el GamePad
-    let mut mode = "2D";  // Inicializar la variable `mode`
+    let mode = "2D";  // Inicializar la variable `mode`
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         match &mut current_screen {
             ScreenState::Menu => {
-                framebuffer.clear(); 
+                framebuffer.clear();  // Limpia el framebuffer antes de dibujar el menú
 
                 if let Some(selected_level) = menu.update(&window, &mut gamepad.gilrs) {
                     current_screen = ScreenState::Game(selected_level);
@@ -80,6 +81,12 @@ fn run_game() {
                 }
 
                 menu.draw(&mut framebuffer);
+
+                window
+                    .update_with_buffer(&framebuffer.buffer.iter().map(|color| {
+                        ((color.r as u32) << 16) | ((color.g as u32) << 8) | (color.b as u32)
+                    }).collect::<Vec<u32>>(), window_width, window_height)
+                    .unwrap();
             }
             ScreenState::Game(level) => {
                 let (maze, start_pos) = maze::reader::load_maze(level);
@@ -101,7 +108,12 @@ fn run_game() {
                 let mut success = false;
 
                 while window.is_open() && !window.is_key_down(Key::Escape) {
-                    let moved = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, &mut gamepad.gilrs);
+                    let reached_goal = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, &mut gamepad.gilrs);
+
+                    if reached_goal {
+                        success = true;
+                        break;
+                    }
 
                     let elapsed_time = sprite_timer.elapsed().as_secs();
 
@@ -119,11 +131,6 @@ fn run_game() {
 
                         sprite_timer = Instant::now();
                         trigger_time = rng.gen_range(0..15);
-                    }
-
-                    if success {
-                        current_screen = ScreenState::Success;
-                        break;
                     }
 
                     camera.update(&window, &mut gamepad.gilrs);
@@ -153,24 +160,36 @@ fn run_game() {
 
                     std::thread::sleep(frame_delay);
                 }
+
+                if success {
+                    current_screen = ScreenState::Success;
+
+                    // Re-inicializa el framebuffer y la ventana para la pantalla de éxito
+                    framebuffer = Framebuffer::new(window_width, window_height); 
+                    window = Window::new(
+                        "Maze Renderer",
+                        window_width,
+                        window_height,
+                        WindowOptions::default(),
+                    ).unwrap();
+                }
             }
             ScreenState::Success => {
-                framebuffer.clear();
+                framebuffer.clear();  // Limpia el framebuffer correctamente
 
-                for y in 0..framebuffer.height {
-                    for x in 0..framebuffer.width {
-                        framebuffer.set_pixel(x as isize, y as isize, 0);
-                    }
+                // Cargar y redimensionar la imagen de éxito para que coincida con el framebuffer
+                let img = image::open("C:/Users/irvin/UVG/Sexto_Semestre/Graficas/Labyrinth/success.png")
+                    .expect("Failed to load image")
+                    .resize_exact(window_width as u32, window_height as u32, FilterType::Lanczos3);
+
+                let (img_width, img_height) = img.dimensions();
+
+                // Dibujar la imagen en el framebuffer
+                for (x, y, pixel) in img.pixels() {
+                    let rgba = pixel.0;
+                    let color = ((rgba[0] as u32) << 16) | ((rgba[1] as u32) << 8) | (rgba[2] as u32);
+                    framebuffer.set_pixel(x as isize, y as isize, color);
                 }
-
-                let text = "SUCCESS!";
-                let scale = 10;
-                let text_width = (text.len() * (renderer::FONT_WIDTH + 1)) * scale;
-                let text_height = renderer::FONT_HEIGHT * scale;
-                let x = (framebuffer.width - text_width) / 2;
-                let y = (framebuffer.height - text_height) / 2;
-
-                renderer::draw_text(&mut framebuffer, text, x, y, scale, framebuffer::Color { r: 255, g: 255, b: 255 });
 
                 window
                     .update_with_buffer(&framebuffer.buffer.iter().map(|color| {
@@ -178,18 +197,19 @@ fn run_game() {
                     }).collect::<Vec<u32>>(), window_width, window_height)
                     .unwrap();
 
-                if window.get_keys().len() > 0 || window.get_mouse_down(minifb::MouseButton::Left) || window.get_mouse_down(minifb::MouseButton::Right) {
-                    current_screen = ScreenState::Menu;
-                    framebuffer = Framebuffer::new(window_width, window_height); 
-                    menu = Menu::new(); 
-                    window = Window::new(
-                        "Maze Renderer",
-                        window_width,
-                        window_height,
-                        WindowOptions::default(),
-                    ).unwrap();
-                    continue;
-                }
+                // Pausa breve antes de regresar al menú
+                std::thread::sleep(Duration::from_secs(2));
+
+                // Re-inicializa el framebuffer y la ventana antes de regresar al menú
+                framebuffer = Framebuffer::new(window_width, window_height);
+                window = Window::new(
+                    "Maze Renderer",
+                    window_width,
+                    window_height,
+                    WindowOptions::default(),
+                ).unwrap();
+
+                current_screen = ScreenState::Menu;
             }
         }
 
@@ -202,3 +222,4 @@ fn run_game() {
         std::thread::sleep(frame_delay);
     }
 }
+
