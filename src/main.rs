@@ -27,7 +27,7 @@ use minimap::Minimap;
 use renderer::{render2d, render3d, render_sprite};
 use menu::Menu;
 use sprites::Sprite;
-use gamepad::Gamepad;
+use gamepad::{Gamepad, GamepadInput}; // Importa GamepadInput
 use crate::movement::process_events;
 
 enum ScreenState {
@@ -108,9 +108,18 @@ fn run_game() {
                 let mut success = false;
 
                 while window.is_open() && !window.is_key_down(Key::Escape) {
-                    // Lógica para cambiar entre modo 2D y 3D con la tecla 'm'
+                    // Lógica para cambiar entre modo 2D y 3D con la tecla 'm' o el botón 'B'/'Círculo' del gamepad
                     if window.is_key_pressed(Key::M, minifb::KeyRepeat::No) {
                         mode = if mode == "2D" { "3D" } else { "2D" };
+                    }
+
+                    if let Some(gamepad_input) = gamepad.update() {
+                        match gamepad_input {
+                            GamepadInput::ToggleMode => {
+                                mode = if mode == "2D" { "3D" } else { "2D" };
+                            }
+                            _ => {}
+                        }
                     }
 
                     let reached_goal = process_events(&window, &mut player, &maze, block_size, &mut framebuffer, &mut gamepad.gilrs);
@@ -122,40 +131,35 @@ fn run_game() {
 
                     let elapsed_time = sprite_timer.elapsed().as_secs();
 
-                    // Solo disparar sprites si está en modo 3D
-                    if mode == "3D" && elapsed_time >= trigger_time {
-                        let ghost_x = player.pos.x + player.a.cos() * block_size as f32;
-                        let ghost_y = player.pos.y + player.a.sin() * block_size as f32;
+                    if mode == "3D" {
+                        // Solo disparar sprites si está en modo 3D
+                        if elapsed_time >= trigger_time {
+                            let ghost_x = player.pos.x + player.a.cos() * block_size as f32;
+                            let ghost_y = player.pos.y + player.a.sin() * block_size as f32;
 
-                        if sprites.len() >= 3 {
-                            sprites.remove(0);
+                            if sprites.len() >= 3 {
+                                sprites.remove(0);
+                            }
+
+                            let sprite = Sprite::new(ghost_x, ghost_y, 0.0, sprite_texture_path, 16, 16);
+                            sprites.push(sprite);
+
+                            sprite_timer = Instant::now();
+                            trigger_time = rng.gen_range(0..15);
                         }
 
-                        let sprite = Sprite::new(ghost_x, ghost_y, 0.0, sprite_texture_path, 16, 16);
-                        sprites.push(sprite);
-
-                        sprite_timer = Instant::now();
-                        trigger_time = rng.gen_range(0..15);
-                    }
-
-                    camera.update(&window, &mut gamepad.gilrs);
-                    player.a = camera.angle;
-
-                    framebuffer.clear();
-
-                    let mut z_buffer = vec![f32::MAX; framebuffer.width];
-
-                    if mode == "2D" {
-                        render2d(&mut framebuffer, &maze, block_size, &player, success);
-                    } else {
                         render3d(&mut framebuffer, &maze, block_size, &player, success);
+
+                        let mut z_buffer = vec![f32::MAX; framebuffer.width];
+
+                        for sprite in &sprites {
+                            render_sprite(&mut framebuffer, &player, sprite, &mut z_buffer);
+                        }
+                    } else {
+                        render2d(&mut framebuffer, &maze, block_size, &player, success);
                     }
 
                     minimap.draw(&mut framebuffer, &maze, &player, &sprites, block_size);
-
-                    for sprite in &sprites {
-                        render_sprite(&mut framebuffer, &player, sprite, &mut z_buffer);
-                    }
 
                     window
                         .update_with_buffer(&framebuffer.buffer.iter().map(|color| {

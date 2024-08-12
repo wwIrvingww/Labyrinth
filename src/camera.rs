@@ -1,10 +1,9 @@
 use minifb::{Key, Window};
-use gilrs::{Gilrs, Button, EventType, Event};
+use gilrs::{Gilrs, Button, EventType, Event, Axis};
 
 const GAMEPAD_SENSITIVITY: f32 = 5.0; // ajusta este valor según tus necesidades
 const MOUSE_SENSITIVITY: f32 = 0.02; // sensibilidad para la rotación con el mouse 0.02
 const KEY_SENSITIVITY: f32 = 4.0; // sensibilidad para la rotación con el mouse 0.02
-
 
 pub struct Camera {
     pub position: (f32, f32),
@@ -56,7 +55,7 @@ impl Camera {
             self.rotating_right = false;
         }
 
-        // Procesar entrada del gamepad
+        // Procesar entrada del gamepad (joystick derecho para rotación)
         while let Some(Event { event, .. }) = gamepad.next_event() {
             match event {
                 EventType::ButtonPressed(Button::DPadUp, _) => {
@@ -71,17 +70,17 @@ impl Camera {
                 EventType::ButtonReleased(Button::DPadDown, _) => {
                     self.moving_backward = false;
                 }
-                EventType::ButtonPressed(Button::DPadLeft, _) => {
-                    self.rotating_left = true;
-                }
-                EventType::ButtonReleased(Button::DPadLeft, _) => {
-                    self.rotating_left = false;
-                }
-                EventType::ButtonPressed(Button::DPadRight, _) => {
-                    self.rotating_right = true;
-                }
-                EventType::ButtonReleased(Button::DPadRight, _) => {
-                    self.rotating_right = false;
+                EventType::AxisChanged(Axis::RightStickX, value, _) => {
+                    if value > 0.1 {
+                        self.rotating_right = true;
+                        self.angle += self.rotation_speed * GAMEPAD_SENSITIVITY * value;
+                    } else if value < -0.1 {
+                        self.rotating_left = true;
+                        self.angle -= self.rotation_speed * GAMEPAD_SENSITIVITY * value.abs();
+                    } else {
+                        self.rotating_left = false;
+                        self.rotating_right = false;
+                    }
                 }
                 _ => {}
             }
@@ -128,14 +127,4 @@ impl Camera {
     fn rotate_right(&mut self) {
         self.angle += self.rotation_speed * KEY_SENSITIVITY;
     }
-
-    fn rotate_left_gamepad(&mut self) {
-        self.angle -= self.rotation_speed * GAMEPAD_SENSITIVITY;
-    }
-
-    fn rotate_right_gamepad(&mut self) {
-        self.angle += self.rotation_speed * GAMEPAD_SENSITIVITY;
-    }
 }
-
-
