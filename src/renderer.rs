@@ -70,7 +70,7 @@ fn draw_cell(framebuffer: &mut Framebuffer, x0: usize, y0: usize, block_size: us
     let color = match cell {
         '+' | '|' | '-' => 0x5A639C,
         ' ' => 0xE2BBE9,
-        'g' => 0x00FF00,
+        'g' => 0xE2BBE9,
         'p' => 0xE2BBE9,
         _ => 0xE2BBE9,
     };

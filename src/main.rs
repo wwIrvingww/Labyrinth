@@ -19,6 +19,7 @@ mod minimap;
 mod menu;
 mod sprites;
 mod gamepad;
+mod audio_player;
 
 use framebuffer::Framebuffer;
 use player::Player;
@@ -27,8 +28,10 @@ use minimap::Minimap;
 use renderer::{render2d, render3d, render_sprite};
 use menu::Menu;
 use sprites::Sprite;
-use gamepad::{Gamepad, GamepadInput}; // Importa GamepadInput
+use gamepad::{Gamepad, GamepadInput};
 use crate::movement::process_events;
+
+use audio_player::AudioPlayer;
 
 enum ScreenState {
     Menu,
@@ -42,11 +45,15 @@ fn main() {
     }
 }
 
+
+
+
+
 fn run_game() {
     let block_size = 40;
     let mut rng = rand::thread_rng();
     let mut sprite_timer = Instant::now();
-    let mut trigger_time = rng.gen_range(15..100);
+    let mut trigger_time = rng.gen_range(5..60);
 
     let window_width = 640;
     let window_height = 480;
@@ -65,6 +72,9 @@ fn run_game() {
     let mut menu = Menu::new(); 
 
     let sprite_texture_path = "C:/Users/irvin/UVG/Sexto_Semestre/Graficas/Labyrinth/ghost.png";
+    
+    let audio_file_path = "C:/Users/irvin/UVG/Sexto_Semestre/Graficas/Labyrinth/song.mp3"; // Reemplaza con la ruta a tu archivo de música
+    let audio_player = AudioPlayer::new(audio_file_path); // Inicializa el reproductor de audio
 
     let mut sprites = vec![]; // Lista de fantasmas
     let mut gamepad = Gamepad::new(); // Inicializar el GamePad
@@ -77,6 +87,7 @@ fn run_game() {
 
                 if let Some(selected_level) = menu.update(&window, &mut gamepad.gilrs) {
                     current_screen = ScreenState::Game(selected_level);
+                    audio_player.play(); // Comienza a reproducir la música al iniciar el laberinto
                     continue;
                 }
 
@@ -172,6 +183,7 @@ fn run_game() {
 
                 if success {
                     current_screen = ScreenState::Success;
+                    audio_player.stop(); // Detener la música al llegar a la pantalla de éxito
 
                     // Re-inicializa el framebuffer y la ventana para la pantalla de éxito
                     framebuffer = Framebuffer::new(window_width, window_height); 
