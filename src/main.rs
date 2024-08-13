@@ -46,7 +46,7 @@ fn run_game() {
     let block_size = 40;
     let mut rng = rand::thread_rng();
     let mut sprite_timer = Instant::now();
-    let mut trigger_time = rng.gen_range(0..15);
+    let mut trigger_time = rng.gen_range(15..100);
 
     let window_width = 640;
     let window_height = 480;

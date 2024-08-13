@@ -31,7 +31,6 @@ impl Sprite {
         let pixel = self.texture_data.get_pixel(x, y);
         (pixel[0], pixel[1], pixel[2])
     }
-    
 
     pub fn render(&self, framebuffer: &mut Framebuffer, camera_x: f32, camera_y: f32, camera_angle: f32) {
         let dx = self.x - camera_x;
@@ -44,7 +43,9 @@ impl Sprite {
         }
     
         let screen_x = framebuffer.width as f32 / 2.0 * (1.0 + sprite_angle.tan());
-        let sprite_size = (framebuffer.height as f32 / distance) as usize;
+        
+        // Reducir el tamaño del sprite a la mitad
+        let sprite_size = (framebuffer.height as f32 / distance / 4.0) as usize;
     
         let floor_offset = framebuffer.height as isize / 2;
     
@@ -65,5 +66,4 @@ impl Sprite {
             }
         }
     }
-    
 }
