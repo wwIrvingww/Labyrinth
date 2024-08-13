@@ -54,7 +54,14 @@ impl Menu {
     }
 
     pub fn draw(&self, framebuffer: &mut Framebuffer) {
-        framebuffer.clear();
+        let background_color = Color { r: 90, g: 99, b: 156 };
+        // Establecer color de fondo
+        for x in 0..framebuffer.width {
+            for y in 0..framebuffer.height {
+                framebuffer.set_pixel(x as isize, y as isize, ((background_color.r as u32) << 16) | ((background_color.g as u32) << 8) | (background_color.b as u32));
+            }
+        }
+
 
         let box_width = 100;
         let box_height = 100;
@@ -65,7 +72,7 @@ impl Menu {
         for i in 0..3 {
             let x = start_x + i * (box_width + spacing);
             let color = if i == self.selected {
-                Color { r: 0, g: 255, b: 0 } // Verde para el cuadro seleccionado
+                Color { r: 226, g: 187, b: 233 } // Verde para el cuadro seleccionado
             } else {
                 Color { r: 255, g: 255, b: 255 } // Blanco para los demás cuadros
             };

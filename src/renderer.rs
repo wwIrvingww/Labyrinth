@@ -122,7 +122,12 @@ pub fn draw_text(
     }
 }
 
-static WALL1: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("wall1.png")));
+// static WALL1: Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("wall1.png")));
+
+// Crear una textura procedural en lugar de cargar desde un archivo
+static WALL1: Lazy<Arc<Texture>> = Lazy::new(|| {
+    Arc::new(Texture::from_procedural_pattern(512, 512))
+});
 
 pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player, success: bool) {
     framebuffer.clear();
@@ -147,11 +152,14 @@ pub fn render2d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
     }
 }
 
+
+
 pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player, success: bool) {
     let num_rays = framebuffer.width;
     let hh = framebuffer.height as f32 / 2.0;
 
-    framebuffer.set_current_color(0x87CEEB);
+    // Establece el color del cielo
+    framebuffer.set_current_color(0x3F4670); // Color del cielo
 
     for y in 0..hh as usize {
         for x in 0..framebuffer.width {
@@ -159,7 +167,8 @@ pub fn render3d(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: u
         }
     }
 
-    framebuffer.set_current_color(0x8B4513);
+    // Establece el color del suelo
+    framebuffer.set_current_color(0x565680); // Color del suelo
 
     for y in hh as usize..framebuffer.height {
         for x in 0..framebuffer.width {
