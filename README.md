@@ -3,6 +3,9 @@
 
 Labyrinth is an engaging maze-solving game that allows you to navigate through intricate labyrinths. The game provides a dynamic experience by offering both 2D and 3D rendering modes, which can be toggled with the press of a key.
 
+# Video
+https://www.youtube.com/watch?v=OXBoOlBeCLA
+
 Features
 --------
 
@@ -53,3 +56,4 @@ This project utilizes several Rust crates:
 -   `image`: For loading and manipulating images.
 -   `gilrs`: For gamepad support.
 -   `rodio`: For audio playback.
+
